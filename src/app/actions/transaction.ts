@@ -64,11 +64,11 @@ export async function seedMockTransactions() {
   const categoryNames = ['Housing', 'Food', 'Transport', 'Education', 'Shopping', 'Health', 'Lifestyle', 'Other'];
   const categories = await Promise.all(
     categoryNames.map(async name => {
-      return await prisma.category.upsert({
-        where: { name },
-        update: {},
-        create: { name, isDefault: true }
-      });
+      let cat = await prisma.category.findFirst({ where: { name } });
+      if (!cat) {
+        cat = await prisma.category.create({ data: { name, isDefault: true } });
+      }
+      return cat;
     })
   );
   
