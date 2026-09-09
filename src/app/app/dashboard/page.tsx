@@ -123,7 +123,18 @@ export default async function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-[#475569] text-sm">No expenses recorded this month yet.</p>
+              <div className="text-center py-6">
+                <p className="text-[#475569] text-sm mb-4">No expenses recorded this month yet.</p>
+                <form action={async () => {
+                  'use server';
+                  const { seedMockTransactions } = await import('@/app/actions/transaction');
+                  await seedMockTransactions();
+                }}>
+                  <button type="submit" className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg font-medium hover:bg-indigo-100 transition-colors text-sm">
+                    Load Demo Data
+                  </button>
+                </form>
+              </div>
             )}
           </div>
 

@@ -1,7 +1,7 @@
 'use client';
 
-import { deleteTransaction } from '@/app/actions/transaction';
-import { Trash2 } from 'lucide-react';
+import { deleteTransaction, seedMockTransactions } from '@/app/actions/transaction';
+import { Trash2, Sparkles } from 'lucide-react';
 import { useTransition } from 'react';
 
 type Tx = {
@@ -33,11 +33,25 @@ export default function TransactionList({ transactions }: { transactions: Tx[] }
     }
   };
 
+  const handleSeed = () => {
+    startTransition(() => {
+      seedMockTransactions();
+    });
+  };
+
   if (transactions.length === 0) {
     return (
-      <div className="bg-white p-12 rounded-xl border border-gray-200 shadow-sm text-center">
+      <div className="bg-white p-12 rounded-xl border border-gray-200 shadow-sm text-center flex flex-col items-center justify-center">
         <h3 className="text-lg font-medium text-[#0F172A]">Your spending story starts here.</h3>
-        <p className="text-[#475569] mt-2">Add your first expense to see where your family's money is going.</p>
+        <p className="text-[#475569] mt-2 mb-6">Add your first expense to see where your family's money is going.</p>
+        <button 
+          onClick={handleSeed}
+          disabled={isPending}
+          className="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg font-medium hover:bg-indigo-100 transition-colors disabled:opacity-50 text-sm"
+        >
+          <Sparkles size={16} />
+          Load Demo Data
+        </button>
       </div>
     );
   }
