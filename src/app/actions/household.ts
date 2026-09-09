@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 
-export async function createHousehold(formData: FormData) {
+export async function createHousehold(prevState: any, formData: FormData) {
   const session = await getSession();
   if (!session || !session.userId) {
     redirect('/auth/login');

@@ -1,7 +1,12 @@
+'use client';
+
 import { signup } from '@/app/actions/auth';
 import Link from 'next/link';
+import { useActionState } from 'react';
 
 export default function SignupPage() {
+  const [state, formAction] = useActionState(signup, undefined);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA] p-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-sm border border-gray-200 p-8">
@@ -10,7 +15,12 @@ export default function SignupPage() {
           <p className="text-[#475569] mt-2">Join FinTrack and plan smarter together</p>
         </div>
 
-        <form action={signup} className="space-y-4">
+        <form action={formAction} className="space-y-4">
+          {state?.error && (
+            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm border border-red-100">
+              {state.error}
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-[#0F172A] mb-1">Full Name</label>
             <input 

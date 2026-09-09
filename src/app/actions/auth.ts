@@ -5,7 +5,7 @@ import { createSession, deleteSession } from '@/lib/session';
 import bcrypt from 'bcryptjs';
 import { redirect } from 'next/navigation';
 
-export async function signup(formData: FormData) {
+export async function signup(prevState: any, formData: FormData) {
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
@@ -33,7 +33,7 @@ export async function signup(formData: FormData) {
   redirect('/onboarding/household-setup');
 }
 
-export async function login(formData: FormData) {
+export async function login(prevState: any, formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
