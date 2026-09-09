@@ -55,20 +55,12 @@ Instructions:
 - If the user asks if they can afford something, calculate it against their Available cash.
 `;
 
-  const model = genAI.getGenerativeModel({ 
-    model: "gemini-flash-latest",
-    systemInstruction,
-  });
-
   try {
     const chatHistory = history.map(msg => ({
       role: msg.role === 'ai' ? 'model' : 'user',
       parts: [{ text: msg.text }]
     }));
 
-    // If there is audio, we append it to the current turn. We don't start a chat session if there's audio,
-    // we use generateContent since we are passing multimodal data.
-    // Wait, generative-ai SDK supports passing history + multimodal data in generateContent.
     const contents = [...chatHistory];
     
     // Add the user's latest multimodal message
@@ -77,15 +69,35 @@ Instructions:
       parts: [
         {
           inlineData: {
-            data: audioBase64.split(',')[1], // remove data:audio/webm;base64, prefix if present
-            mimeType: 'audio/webm' // Or whatever the browser records. We'll default to audio/webm
+            data: audioBase64.split(',')[1],
+            mimeType: 'audio/webm'
           }
         }
       ]
     });
 
-    const result = await model.generateContent({ contents });
-    const text = result.response.text();
+    // Helper function to try a model
+    const tryModel = async (modelName: string) => {
+      const model = genAI.getGenerativeModel({ model: modelName, systemInstruction });
+      const result = await model.generateContent({ contents });
+      return result.response.text();
+    };
+
+    let text = '';
+    try {
+      // First try the latest flash model
+      text = await tryModel("gemini-flash-latest");
+    } catch (e: any) {
+      console.warn('gemini-flash-latest failed, trying fallback model gemini-3.5-flash...', e.message);
+      try {
+        // Fallback to stable 3.5 flash
+        text = await tryModel("gemini-3.5-flash");
+      } catch (e2: any) {
+        console.warn('gemini-3.5-flash failed, trying fallback model gemini-2.5-flash...', e2.message);
+        // Fallback to stable 2.5 flash
+        text = await tryModel("gemini-2.5-flash");
+      }
+    }
 
     return { success: true, text };
   } catch (error: any) {
