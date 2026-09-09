@@ -8,6 +8,22 @@ export default async function DashboardPage() {
 
   const household = membership.household;
 
+  const currentMonthStart = new Date();
+  currentMonthStart.setDate(1);
+  currentMonthStart.setHours(0, 0, 0, 0);
+
+  const transactions = await prisma.transaction.findMany({
+    where: {
+      householdId: household.id,
+      date: { gte: currentMonthStart }
+    },
+    include: { category: true }
+  });
+
+  const income = transactions.filter(t => t.type === 'INCOME').reduce((acc, t) => acc + t.amount, 0);
+  const spent = transactions.filter(t => t.type === 'EXPENSE').reduce((acc, t) => acc + t.amount, 0);
+  const saved = income - spent;
+
   // Formatting currency helper
   const formatINR = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -17,12 +33,32 @@ export default async function DashboardPage() {
     }).format(amount);
   };
 
+  const currentMonthName = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+
+  // Calculate this month's spending by category
+  const categorySpending = transactions
+    .filter(t => t.type === 'EXPENSE' && t.category)
+    .reduce((acc, t) => {
+      const name = t.category!.name;
+      acc[name] = (acc[name] || 0) + t.amount;
+      return acc;
+    }, {} as Record<string, number>);
+    
+  const topCategories = Object.entries(categorySpending)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([name, amount], i) => ({
+      name,
+      amount,
+      color: ['bg-indigo-500', 'bg-emerald-500', 'bg-blue-500', 'bg-amber-500', 'bg-pink-500', 'bg-gray-400'][i % 6]
+    }));
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-[#0F172A]">Good morning, {household.name}</h1>
-        <p className="text-[#475569]">September 2026</p>
+        <p className="text-[#475569]">{currentMonthName}</p>
       </div>
 
       {/* Monthly Overview */}
@@ -32,7 +68,7 @@ export default async function DashboardPage() {
             <TrendingUp size={18} className="text-emerald-600" />
             <h3 className="font-medium">Income</h3>
           </div>
-          <p className="text-3xl font-bold text-[#0F172A]">{formatINR(67000)}</p>
+          <p className="text-3xl font-bold text-[#0F172A]">{formatINR(income)}</p>
         </div>
         
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
@@ -40,7 +76,7 @@ export default async function DashboardPage() {
             <TrendingDown size={18} className="text-amber-600" />
             <h3 className="font-medium">Spent</h3>
           </div>
-          <p className="text-3xl font-bold text-[#0F172A]">{formatINR(51200)}</p>
+          <p className="text-3xl font-bold text-[#0F172A]">{formatINR(spent)}</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
@@ -48,7 +84,7 @@ export default async function DashboardPage() {
             <Target size={18} className="text-blue-600" />
             <h3 className="font-medium">Saved</h3>
           </div>
-          <p className="text-3xl font-bold text-[#0F172A]">{formatINR(15800)}</p>
+          <p className="text-3xl font-bold text-[#0F172A]">{formatINR(saved)}</p>
         </div>
       </div>
 
@@ -74,24 +110,21 @@ export default async function DashboardPage() {
           {/* This Month's Spending */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <h2 className="text-lg font-semibold text-[#0F172A] mb-4">This Month's Spending</h2>
-            <div className="space-y-4">
-              {[
-                { name: 'Housing', amount: 12000, color: 'bg-indigo-500' },
-                { name: 'Food', amount: 7400, color: 'bg-emerald-500' },
-                { name: 'Education', amount: 8000, color: 'bg-blue-500' },
-                { name: 'Transport', amount: 4200, color: 'bg-amber-500' },
-                { name: 'Shopping', amount: 6100, color: 'bg-pink-500' },
-                { name: 'Other', amount: 5500, color: 'bg-gray-400' },
-              ].map((cat) => (
-                <div key={cat.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${cat.color}`}></div>
-                    <span className="text-[#475569] font-medium">{cat.name}</span>
+            {topCategories.length > 0 ? (
+              <div className="space-y-4">
+                {topCategories.map((cat) => (
+                  <div key={cat.name} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-3 h-3 rounded-full ${cat.color}`}></div>
+                      <span className="text-[#475569] font-medium">{cat.name}</span>
+                    </div>
+                    <span className="text-[#0F172A] font-semibold">{formatINR(cat.amount)}</span>
                   </div>
-                  <span className="text-[#0F172A] font-semibold">{formatINR(cat.amount)}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[#475569] text-sm">No expenses recorded this month yet.</p>
+            )}
           </div>
 
         </div>
